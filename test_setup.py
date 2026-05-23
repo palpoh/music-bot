@@ -1,51 +1,31 @@
 import os
 import sys
-import requests
 import time
-import dns.resolver
+from huggingface_hub import InferenceClient
 
 # Ждем старта сети
 time.sleep(5)
 
-# Настройка DNS через Google
-resolver = dns.resolver.Resolver()
-resolver.nameservers = ['8.8.8.8']
-
-def get_ip_from_dns(host):
-    try:
-        answers = resolver.resolve(host, 'A')
-        return str(answers[0])
-    except:
-        return host # Если DNS Google не помог, вернем имя как есть
-
 TOKEN = os.getenv("HF_TOKEN")
 prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "hard drill rap beat"
 
-# Резолвим IP перед запросом
-hostname = "api-inference.huggingface.co"
-ip = get_ip_from_dns(hostname)
-API_URL = f"https://{ip}/models/stabilityai/stable-audio-open-1.0"
+# Используем официальный клиент, он сам управляет заголовками и соединениями
+client = InferenceClient(token=TOKEN)
 
-print(f"Запрос к {hostname} (IP: {ip})")
+print(f"Запрос через InferenceClient: {prompt}")
 
 try:
-    response = requests.post(
-        API_URL, 
-        headers={
-            "Authorization": f"Bearer {TOKEN}",
-            "Host": hostname  # ОБЯЗАТЕЛЬНО передаем имя хоста в заголовке
-        }, 
-        json={"inputs": prompt},
-        timeout=120
+    # Официальный метод для text-to-audio
+    audio_data = client.text_to_speech(
+        model="stabilityai/stable-audio-open-1.0",
+        text=prompt
     )
     
-    if response.status_code == 200:
-        with open("final_fixed.wav", "wb") as f:
-            f.write(response.content)
-        print("Успех: файл записан.")
-    else:
-        print(f"Ошибка API (код {response.status_code}): {response.text}")
-        sys.exit(1)
+    # Сохраняем результат
+    with open("final_fixed.wav", "wb") as f:
+        f.write(audio_data)
+    print("Успех: файл записан.")
+
 except Exception as e:
-    print(f"Ошибка соединения: {e}")
+    print(f"Ошибка при работе с InferenceClient: {e}")
     sys.exit(1)
