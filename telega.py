@@ -7,7 +7,10 @@ from aiogram.types import Message, FSInputFile, InlineKeyboardMarkup, InlineKeyb
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 
-TOKEN = "Token"
+# БЕРЕМ ТОКЕН ИЗ ОБЛАКА
+TOKEN = os.getenv("TOKEN")
+if not TOKEN:
+    raise ValueError("Ошибка: переменная окружения TOKEN не задана!")
 ADMIN_IDS = [1973926980, 233188678]
 
 session = AiohttpSession(timeout=60)
