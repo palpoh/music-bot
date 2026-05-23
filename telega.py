@@ -149,12 +149,6 @@ async def save_and_render(message: Message):
     await send_or_replace_message(message, "✅ <b>Текст обновлен!</b>", get_main_kb())
 
 
-async def main():
-    # Эта строка отключает старые вебхуки и сбрасывает зависшие обновления
-    await bot.delete_webhook(drop_pending_updates=True)
-    
-    print("Бот запущен и готов к работе!")
-    await dp.start_polling(bot)
-
+async def main(): await dp.start_polling(bot)
 
 if __name__ == "__main__": asyncio.run(main())
