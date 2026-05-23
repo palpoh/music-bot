@@ -1,3 +1,4 @@
+urllib3<2
 aiogram
 requests
 huggingface_hub
