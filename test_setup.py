@@ -2,32 +2,41 @@ import os
 import sys
 import requests
 import time
+import dns.resolver
 
 # Ждем старта сети
 time.sleep(5)
 
+# Настройка DNS через Google
+resolver = dns.resolver.Resolver()
+resolver.nameservers = ['8.8.8.8']
+
+def get_ip_from_dns(host):
+    try:
+        answers = resolver.resolve(host, 'A')
+        return str(answers[0])
+    except:
+        return host # Если DNS Google не помог, вернем имя как есть
+
 TOKEN = os.getenv("HF_TOKEN")
 prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "hard drill rap beat"
 
-# Используем IP-адрес Hugging Face напрямую, чтобы не зависеть от DNS Render
-# 18.154.20.158 - это один из IP API Hugging Face
-API_URL = "https://18.154.20.158/models/stabilityai/stable-audio-open-1.0"
+# Резолвим IP перед запросом
+hostname = "api-inference.huggingface.co"
+ip = get_ip_from_dns(hostname)
+API_URL = f"https://{ip}/models/stabilityai/stable-audio-open-1.0"
 
-# ВАЖНО: При запросе по IP сервер требует указать имя хоста в заголовке
-headers = {
-    "Authorization": f"Bearer {TOKEN}",
-    "Host": "api-inference.huggingface.co"
-}
-
-print(f"Отправка запроса через IP: {prompt}")
+print(f"Запрос к {hostname} (IP: {ip})")
 
 try:
     response = requests.post(
         API_URL, 
-        headers=headers, 
+        headers={
+            "Authorization": f"Bearer {TOKEN}",
+            "Host": hostname  # ОБЯЗАТЕЛЬНО передаем имя хоста в заголовке
+        }, 
         json={"inputs": prompt},
-        timeout=120,
-        verify=False # Игнорируем SSL, так как используем IP
+        timeout=120
     )
     
     if response.status_code == 200:
