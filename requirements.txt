@@ -3,3 +3,4 @@ aiogram
 requests
 huggingface_hub
 aiohttp
+dnspython
