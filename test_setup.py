@@ -2,6 +2,8 @@ import os
 import sys
 import requests
 import json
+import time
+time.sleep(3) # Даем сети подняться
 
 # Теперь скрипт берет токен из настроек Render (HF_TOKEN)
 TOKEN = os.getenv("HF_TOKEN")
