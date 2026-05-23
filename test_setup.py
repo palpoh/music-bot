@@ -1,35 +1,35 @@
 import os
 import sys
-import requests
-import json
-import time
-time.sleep(3) # Даем сети подняться
+import subprocess
 
-# Теперь скрипт берет токен из настроек Render (HF_TOKEN)
 TOKEN = os.getenv("HF_TOKEN")
-
 if not TOKEN:
-    print("Ошибка: HF_TOKEN не найден в переменных окружения!")
+    print("Ошибка: HF_TOKEN не найден!")
     sys.exit(1)
 
 prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "hard drill rap beat"
-API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-audio-open-1.0"
-headers = {"Authorization": f"Bearer {TOKEN}"}
 
-print(f"Отправка запроса: {prompt}")
+# Используем curl с принудительными DNS 8.8.8.8 (Google)
+# Это обходит внутренние проблемы DNS в облаке Render
+cmd = [
+    "curl", "-v", "--dns-servers", "8.8.8.8",
+    "-X", "POST",
+    "https://api-inference.huggingface.co/models/stabilityai/stable-audio-open-1.0",
+    "-H", f"Authorization: Bearer {TOKEN}",
+    "-H", "Content-Type: application/json",
+    "-d", f'{{"inputs": "{prompt}"}}',
+    "-o", "final_fixed.wav"
+]
+
+print(f"Отправка запроса через curl: {prompt}")
 
 try:
-    response = requests.post(API_URL, headers=headers, json={"inputs": prompt})
-    
-    # Если статус 200 - это музыка
-    if response.status_code == 200:
-        with open("final_fixed.wav", "wb") as f:
-            f.write(response.content)
-        print("Успех: файл final_fixed.wav сохранен.")
+    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    if os.path.exists("final_fixed.wav") and os.path.getsize("final_fixed.wav") > 100:
+        print("Успех: файл сохранен.")
     else:
-        # Если что-то пошло не так (например, модель грузится)
-        print(f"Ошибка API (код {response.status_code}): {response.text}")
+        print(f"Ошибка: Файл пуст. Лог curl: {result.stderr}")
         sys.exit(1)
-except Exception as e:
-    print(f"Ошибка при запросе: {e}")
+except subprocess.CalledProcessError as e:
+    print(f"Ошибка subprocess: {e.stderr}")
     sys.exit(1)
