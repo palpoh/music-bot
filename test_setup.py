@@ -1,34 +1,33 @@
 import os
 import sys
 import requests
-import socket
 import time
 
-# Принудительно задаем DNS для этого процесса
-def resolve_host(host):
-    # Используем прямой запрос к 8.8.8.8, если стандартный DNS не справляется
-    try:
-        # Это хак: перенаправляем запрос через IP напрямую
-        return socket.gethostbyname(host)
-    except:
-        return host # Если совсем плохо, вернем как есть
-
-# Пауза для стабильности сети
+# Ждем старта сети
 time.sleep(5)
 
 TOKEN = os.getenv("HF_TOKEN")
 prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "hard drill rap beat"
-API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-audio-open-1.0"
 
-print(f"Попытка запроса: {prompt}")
+# Используем IP-адрес Hugging Face напрямую, чтобы не зависеть от DNS Render
+# 18.154.20.158 - это один из IP API Hugging Face
+API_URL = "https://18.154.20.158/models/stabilityai/stable-audio-open-1.0"
+
+# ВАЖНО: При запросе по IP сервер требует указать имя хоста в заголовке
+headers = {
+    "Authorization": f"Bearer {TOKEN}",
+    "Host": "api-inference.huggingface.co"
+}
+
+print(f"Отправка запроса через IP: {prompt}")
 
 try:
-    # Запрос с таймаутом
     response = requests.post(
         API_URL, 
-        headers={"Authorization": f"Bearer {TOKEN}"}, 
+        headers=headers, 
         json={"inputs": prompt},
-        timeout=120 # Ждем дольше, так как модель может "прогреваться"
+        timeout=120,
+        verify=False # Игнорируем SSL, так как используем IP
     )
     
     if response.status_code == 200:
