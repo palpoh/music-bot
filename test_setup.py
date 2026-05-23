@@ -2,8 +2,8 @@ import os
 import sys
 import subprocess
 
-# Твой токен
-TOKEN = "Token"
+# Токен Hugging Face из настроек Render
+HF_TOKEN = os.getenv("HF_TOKEN")
 prompt = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else "hard drill rap beat"
 
 # Формируем JSON-запрос в файл
